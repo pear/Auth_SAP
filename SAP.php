@@ -164,23 +164,22 @@ class Auth_Container_SAP extends Auth_Container
 		// discover function specs
 		$fce = saprfc_function_discover($this->conn_id, "SUSR_LOGIN_CHECK_RFC");
 		if (!$fce) {
-			return PEAR::raiseError("Auth_Container_SAP: Could not get function info from SAP server: ".saprfc_error(), 41, PEAR_ERROR_DIE);
+			return PEAR::raiseError("Auth_Container_SAP: Could not get function info from SAP server: " . saprfc_error(), 41, PEAR_ERROR_DIE);
 		}
-		
+
 		// set function parameters
-		saprfc_import ($fce,"BNAME"   ,$username);
-		saprfc_import ($fce,"PASSWORD",$password);
-		
+		saprfc_import($fce, "BNAME"   ,$username);
+		saprfc_import($fce, "PASSWORD",$password);
+
 		// call function
-		$rfc_rc = @saprfc_call_and_receive ($fce);
-		
+		$rfc_rc = @saprfc_call_and_receive($fce);
+
 		// release function specs
 		saprfc_function_free($fce);
-		
+
 		// only the execution status matters here
 		return $rfc_rc == SAPRFC_OK;
     }
-
 
     // {{{ listUsers()
 
@@ -194,41 +193,42 @@ class Auth_Container_SAP extends Auth_Container
 		// discover function specs
 		$fce = saprfc_function_discover($rfc, "SO_USER_LIST_READ");
 		if (!$fce) {
-			return PEAR::raiseError("Auth_Container_SAP: Could not get function info from SAP server: ".saprfc_error(), 41, PEAR_ERROR_DIE);
+			return PEAR::raiseError("Auth_Container_SAP: Could not get function info from SAP server: " . saprfc_error(), 41, PEAR_ERROR_DIE);
 		}
-		
+
 		// set function parameter
-		saprfc_import ($fce, "USER_GENERIC_NAME","*");
-		
+		saprfc_import($fce, "USER_GENERIC_NAME","*");
+
 		// prepare table for returned results
-		saprfc_table_init ($fce, "USER_DISPLAY_TAB");
-		
+		saprfc_table_init($fce, "USER_DISPLAY_TAB");
+
 		// call function
-		$rfc_rc = @saprfc_call_and_receive ($fce);
-		
+		$rfc_rc = @saprfc_call_and_receive($fce);
+
 		// error handling
 		if ($rfc_rc != SAPRFC_OK) {
-			return PEAR::raiseError("Auth_Container_SAP: Could not fecth userlist from SAP server: ".saprfc_error(), 41, PEAR_ERROR_DIE);
+			return PEAR::raiseError("Auth_Container_SAP: Could not fecth userlist from SAP server: " . saprfc_error(), 41, PEAR_ERROR_DIE);
 		}
-		
+
 		// fetch users from returned table
 		$users = array();
-		$rows = saprfc_table_rows ($fce, "USER_DISPLAY_TAB");
-		for ($i=1; $i<=$rows; $i++) {
-			$row = saprfc_table_read ($fce, "USER_DISPLAY_TAB", $i);
-			if(empty($row["USRNAM"])) continue;
+		$rows = saprfc_table_rows($fce, "USER_DISPLAY_TAB");
+		for ($i = 1; $i <= $rows; $i++) {
+			$row = saprfc_table_read($fce, "USER_DISPLAY_TAB", $i);
+			if (empty($row["USRNAM"])) {
+			    continue;
+			}
 			$users[] = $row;
 		}
-		
+
 		// release functions specs
 		saprfc_function_free($fce);
-		
+
 		// return result;
 		return $users;
 	}
-	
-    // }}}
 
+    // }}}
 }
 /*
  * Local variables:
@@ -238,5 +238,4 @@ class Auth_Container_SAP extends Auth_Container
  * vim600: sw=4 ts=4 fdm=marker
  * vim<600: sw=4 ts=4
  */
-
 ?>
