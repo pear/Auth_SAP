@@ -12,14 +12,17 @@ and SO_USER_LIST_READ (for the listUsers() method) ABAP RFC functions.
 This class needs the saprfc extension installed which is available at
 http://saprfc.sourceforge.net/
   </description>
+
 	<license>PHP License</license>
+
 	<maintainers>
 		<maintainer>
 			<user>hholzgra</user>
 			<name>Hartmut Holzgraefe</name>
-			<email>hholzgra@php.net</email>
+			<email>hartmut@php.net</email>
 		</maintainer>
 	</maintainers>
+
 	<release>
 		<version>0.9</version>
 		<date>2003-02-12</date>
@@ -28,9 +31,16 @@ http://saprfc.sourceforge.net/
      Initial 'official' beta release.
     </notes>
 	</release>
+
+  <deps>
+    <dep type="pkg" rel="ge" version="1.1.1">Auth</dep>
+		<dep type="ext" rel="has">sap_rfc</dep>
+  </deps>
+
 	<filelist>
 		<file role="php" baseinstalldir="Auth/Container" name="SAP.php"/>
 	</filelist> 
+
 	<changelog>
 	</changelog>  
 </package>
