@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE package SYSTEM "../package.dtd">
+<package>
+	<name>Auth_SAP</name>
+	<summary>SAP R/3 / mySAP authentication container</summary>
+	<description>
+This class provides user authentication against a SAP R/3 or mySAP Server
+It binds to a SAP application server using a preconfigured user
+that has to be able to perform calls to the SUSR_LOGIN_CHECK_RFC
+and SO_USER_LIST_READ (for the listUsers() method) ABAP RFC functions.
+
+This class needs the saprfc extension installed which is available at
+http://saprfc.sourceforge.net/
+  </description>
+	<license>PHP License</license>
+	<maintainers>
+		<maintainer>
+			<user>hholzgra</user>
+			<name>Hartmut Holzgraefe</name>
+			<email>hholzgra@php.net</email>
+		</maintainer>
+	</maintainers>
+	<release>
+		<version>0.9</version>
+		<date>2003-02-12</date>
+		<state>beta</state>
+		<notes>
+     Initial 'official' beta release.
+    </notes>
+	</release>
+	<filelist>
+		<file role="php" baseinstalldir="Auth/Container" name="SAP.php"/>
+	</filelist> 
+	<changelog>
+	</changelog>  
+</package>

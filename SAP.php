@@ -25,6 +25,38 @@ require_once "PEAR.php";
 /**
  * Storage driver for fetching login data from R/3 or mySAP
  *
+ * This class provides user authentication against a SAP R/3 or mySAP Server
+ * It binds to a SAP application server using a preconfigured user
+ * that has to be able to perform calls to the SUSR_LOGIN_CHECK_RFC
+ * and SO_USER_LIST_READ (for the listUsers() method) ABAP RFC functions
+ *
+ * This class needs the saprfc extension installed which is available at
+ * http://saprfc.sourceforge.net/
+ * 
+ * Required connection parameters are:
+ * ASHOST: the application server to talk to          
+ * SYSNR : the system number on the application server
+ * CLIENT: the client number on the application server          
+ * USER  : the user name to connect as         
+ * PASSWD: the users password
+ *
+ * Optional Parameters include 
+ * GWHOST, GWSERV, MSHOST, R3NAME, GROUP, LANG and TRACE. 
+ *
+ * Additional information on the connection parameters are available at
+ * http://saprfc.sourceforge.net/src/saprfc.html#function.saprfc-open.html
+ * and in the original SAP RFC SDK documentation
+ *
+ * Sample usage:
+ *
+ * <?php
+ * ...
+ * // authenticate against a local Linux TestDrive installation
+ *   $a = new Auth("SAP", array ("ASHOST" => "localhost",
+ *                               "SYSNR"  => "17",
+ *                               "CLIENT" => "000",
+ *                               "USER"   => "SAP*",
+ *                               "PASSWD" => "06071992");
  *
  * @author   Hartmut Holzgraefe <hholzgra@php.net>
  * @package  Auth
@@ -52,20 +84,22 @@ class Auth_Container_SAP extends Auth_Container
      */
     function Auth_Container_SAP($params)
     {
-        $this->_setDefaults();
+		if (!extension_loaded("saprfc")) {
+			return PEAR::raiseError("Auth_Container_SAP: saprfc extension not loaded", 41, PEAR_ERROR_DIE);
+		}
 
+        $this->_setDefaults();
+		
         if (is_array($params)) {
             $this->_parseOptions($params);
         }
-
-        $this->_connect();
-
-        return true;
+		
+        return $this->_connect();
     }
-
+	
     // }}}
     // {{{ _connect()
-
+	
     /**
      * Connect to the LDAP server using the global options
      *
@@ -74,11 +108,13 @@ class Auth_Container_SAP extends Auth_Container
      */
     function _connect()
     {
-			$this->conn_id = saprfc_open($this->options);
+		$this->conn_id = saprfc_open($this->options);
+		
+		if (!is_resource($this->conn_id)) {
+			return PEAR::raiseError("Auth_Container_SAP: Could not connect to SAP server: ".saprfc_error(), 41, PEAR_ERROR_DIE);
+		}
 
-			if (!is_resource($this->con_id)) {
-				return PEAR::raiseError("Auth_Container_PHP: Could not connect to SAP server: ".saprfc_error(), 41, PEAR_ERROR_DIE);
-			}
+		return true;
     }
 
     // }}}
@@ -91,13 +127,13 @@ class Auth_Container_SAP extends Auth_Container
      */
     function _setDefaults()
     {
-			// these settings are suitable for the Linux TestDrive 
-			// installed on localhost
-			$this->options = array ("ASHOST" => "localhost",
-															"SYSNR"  => "17",
-															"CLIENT" => "000",
-															"USER"   => "SAP*",
-															"PASSWD" => "06071992");
+		// these settings are suitable for the Linux TestDrive 
+		// installed on localhost
+		$this->options = array ("ASHOST" => "localhost",
+								"SYSNR"  => "17",
+								"CLIENT" => "000",
+								"USER"   => "SAP*",
+								"PASSWD" => "06071992");
     }
 
     /**
@@ -120,23 +156,29 @@ class Auth_Container_SAP extends Auth_Container
      * combination.
      *
      * @param  string Username
+     * @param  string Password
      * @return boolean
      */
     function fetchData($username, $password)
-    {      
-			$fce = saprfc_function_discover($this->conn_id, "SUSR_LOGIN_CHECK_RFC");
-			if(!$fce) {
-				return PEAR::raiseError("Auth_Container_PHP: Could not get function info from SAP server: ".saprfc_error(), 41, PEAR_ERROR_DIE);
-			}
+    {     
+		// discover function specs
+		$fce = saprfc_function_discover($this->conn_id, "SUSR_LOGIN_CHECK_RFC");
+		if (!$fce) {
+			return PEAR::raiseError("Auth_Container_SAP: Could not get function info from SAP server: ".saprfc_error(), 41, PEAR_ERROR_DIE);
+		}
 		
-			saprfc_import ($fce,"BNAME"   ,$username);
-			saprfc_import ($fce,"PASSWORD",$password);
-			
-			$rfc_rc = saprfc_call_and_receive ($fce);
-			
-			saprfc_function_free($fce);
-			
-			return $rfc_rf == SAPRFC_OK;
+		// set function parameters
+		saprfc_import ($fce,"BNAME"   ,$username);
+		saprfc_import ($fce,"PASSWORD",$password);
+		
+		// call function
+		$rfc_rc = @saprfc_call_and_receive ($fce);
+		
+		// release function specs
+		saprfc_function_free($fce);
+		
+		// only the execution status matters here
+		return $rfc_rc == SAPRFC_OK;
     }
 
 
@@ -144,40 +186,57 @@ class Auth_Container_SAP extends Auth_Container
 
     /**
      * List all SAP users available
-		 *
-		 * 
+	 *
+	 * @return array
      */
     function listUsers()
     {
-			$users = array();
-
-			$fce = saprfc_function_discover($rfc, "SO_USER_LIST_READ");
-			if(!$fce) {
-				return PEAR::raiseError("Auth_Container_PHP: Could not get function info from SAP server: ".saprfc_error(), 41, PEAR_ERROR_DIE);
-			}
-			
-			saprfc_import ($fce, "USER_GENERIC_NAME","*");
-			saprfc_table_init ($fce, "USER_DISPLAY_TAB");
-			
-			$rfc_rc = saprfc_call_and_receive ($fce);
-			
-			if($rfc_rc != SAPRFC_OK) {
-				return PEAR::raiseError("Auth_Container_PHP: Could not fecth userlist from SAP server: ".saprfc_error(), 41, PEAR_ERROR_DIE);
-			}
-
-			$rows = saprfc_table_rows ($fce, "USER_DISPLAY_TAB");
-			for ($i=1; $i<=$rows; $i++) {
-				$row = saprfc_table_read ($fce, "USER_DISPLAY_TAB", $i);
-				if(empty($row["USRNAM"])) continue;
-				$users[] = $row;
-			}
-			
-			
-			saprfc_function_free($fce);
-    }
-
+		// discover function specs
+		$fce = saprfc_function_discover($rfc, "SO_USER_LIST_READ");
+		if (!$fce) {
+			return PEAR::raiseError("Auth_Container_SAP: Could not get function info from SAP server: ".saprfc_error(), 41, PEAR_ERROR_DIE);
+		}
+		
+		// set function parameter
+		saprfc_import ($fce, "USER_GENERIC_NAME","*");
+		
+		// prepare table for returned results
+		saprfc_table_init ($fce, "USER_DISPLAY_TAB");
+		
+		// call function
+		$rfc_rc = @saprfc_call_and_receive ($fce);
+		
+		// error handling
+		if ($rfc_rc != SAPRFC_OK) {
+			return PEAR::raiseError("Auth_Container_SAP: Could not fecth userlist from SAP server: ".saprfc_error(), 41, PEAR_ERROR_DIE);
+		}
+		
+		// fetch users from returned table
+		$users = array();
+		$rows = saprfc_table_rows ($fce, "USER_DISPLAY_TAB");
+		for ($i=1; $i<=$rows; $i++) {
+			$row = saprfc_table_read ($fce, "USER_DISPLAY_TAB", $i);
+			if(empty($row["USRNAM"])) continue;
+			$users[] = $row;
+		}
+		
+		// release functions specs
+		saprfc_function_free($fce);
+		
+		// return result;
+		return $users;
+	}
+	
     // }}}
 
 }
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: sw=4 ts=4 fdm=marker
+ * vim<600: sw=4 ts=4
+ */
 
 ?>
