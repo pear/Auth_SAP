@@ -124,7 +124,7 @@ class Auth_Container_SAP extends Auth_Container
      */
     function fetchData($username, $password)
     {      
-			$fce = saprfc_function_discover($this->conn_id, "BAPI_USER_GET_DETAIL");
+			$fce = saprfc_function_discover($this->conn_id, "SUSR_LOGIN_CHECK_RFC");
 			if(!$fce) {
 				return PEAR::raiseError("Auth_Container_PHP: Could not get function info from SAP server: ".saprfc_error(), 41, PEAR_ERROR_DIE);
 			}
@@ -151,7 +151,7 @@ class Auth_Container_SAP extends Auth_Container
     {
 			$users = array();
 
-			$fce = saprfc_function_discover($rfc, "BAPI_USER_GET_DETAIL");
+			$fce = saprfc_function_discover($rfc, "SO_USER_LIST_READ");
 			if(!$fce) {
 				return PEAR::raiseError("Auth_Container_PHP: Could not get function info from SAP server: ".saprfc_error(), 41, PEAR_ERROR_DIE);
 			}
