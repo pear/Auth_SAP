@@ -28,20 +28,20 @@ require_once "PEAR.php";
  * This class provides user authentication against a SAP R/3 or mySAP Server
  * It binds to a SAP application server using a preconfigured user
  * that has to be able to perform calls to the SUSR_LOGIN_CHECK_RFC
- * and SO_USER_LIST_READ (for the listUsers() method) ABAP RFC functions
+ * and SO_USER_LIST_READ (for the listUsers() method) ABAP RFC functions.
  *
  * This class needs the saprfc extension installed which is available at
  * http://saprfc.sourceforge.net/
  * 
  * Required connection parameters are:
- * ASHOST: the application server to talk to          
+ * ASHOST: the application server to talk to
  * SYSNR : the system number on the application server
- * CLIENT: the client number on the application server          
- * USER  : the user name to connect as         
+ * CLIENT: the client number on the application server
+ * USER  : the user name to connect as
  * PASSWD: the users password
  *
- * Optional Parameters include 
- * GWHOST, GWSERV, MSHOST, R3NAME, GROUP, LANG and TRACE. 
+ * Optional parameters include 
+ * GWHOST, GWSERV, MSHOST, R3NAME, GROUP, LANG and TRACE.
  *
  * Additional information on the connection parameters are available at
  * http://saprfc.sourceforge.net/src/saprfc.html#function.saprfc-open.html
